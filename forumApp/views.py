@@ -138,8 +138,7 @@ def user_info(request):  # 更改用户数据
         res = User.objects.filter(UserName=user).update(SelfIntro=content)
     else:
         res = User.objects.filter(UserName=user).update(nickname="William", phone="18010476877",
-                                                        sex=True, type="under", LogState=True,
-                                                        SelfIntro="我是宁哥",
+                                                        sex=True,SelfIntro="我是宁哥",
                                                         imageSrc=request.FILES.get('photo'))  # 最后这里是个图片文件
 
     if res:
@@ -160,7 +159,6 @@ def user_query(request):  # 查询用户数据
     dict_ = {"username": res.UserName.username, "user_code": res.UserName.user_code,
              "nickname": res.nickname, "gender": gender, "phone": res.phone,
              "birthday": res.birthday, "email": res.Email,
-             "follower": res.follower.all().value('UserName'), "following": res.following.all().value('UserName'),
              "brief_intro": res.SelfIntro,
              }
 

@@ -9,5 +9,10 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('login/', views.login, name='login'),
     path('change', views.change_password),
-
+    path('user_info', views.user_info),
+    path('user_query', views.user_query),
+    path('who_to_follow', views.who_to_follow),
+    path('who_to_follow', views.who_to_follow),
+    path('blocked', views.blocked),
+    path('follow', views.follow),
 ]
