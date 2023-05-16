@@ -32,7 +32,7 @@ class User(models.Model):
     sex = models.BooleanField(default=True)  # True表示男性，False表示女性
     Follower = models.IntegerField(blank=True, null=True)  # 仅关注我的人数
     SelfIntro = models.CharField(max_length=255, blank=True, null=True)
-    Following = models.IntegerField(blank=True, null=True)
+    following = models.ManyToManyField('self', symmetrical=False, related_name='followers')
     blocked_users = models.ManyToManyField('self', symmetrical=False, related_name='blocked_by')
     imageSrc = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
 
@@ -69,11 +69,4 @@ class Post(models.Model):
     def __str__(self):
         return self.id
 
-
-class Follow(models.Model):
-    FollowerID = models.ForeignKey(User, on_delete=models.CASCADE)  # 关注者
-    FollowedID = models.ForeignKey(User, on_delete=models.CASCADE)  # 被关注者
-
-    def __str__(self):
-        return self.id
 

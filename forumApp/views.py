@@ -10,7 +10,7 @@ from .models import *
 
 
 def index(request):
-    return HttpResponse("请求路径:{}" .format(request.path))
+    return HttpResponse("请求路径:{}".format(request.path))
 
 
 def register(request):  # 上传用户名和密码
@@ -147,18 +147,38 @@ def user_info(request):  # 更改用户数据
     return HttpResponse("更改失败！")
 
 
+def user_query(request):  # 查询用户数据
+    # 前端只需要传一个用户序号，或者登陆时的用户名
+    query = request.POST.get('queryName', '')
+    user = Login.objects.filter(username=query).first()
+    res = User.objects.filter(UserName=user).first()
+
+    if res.sex:
+        gender = "男"
+    else:
+        gender = "女"
+    dict_ = {"username": res.UserName.username, "user_code": res.UserName.user_code,
+             "nickname": res.nickname, "gender": gender, "phone": res.phone,
+             "birthday": res.birthday, "email": res.Email,
+             "follower": res.follower.all().value('UserName'), "following": res.following.all().value('UserName'),
+             "brief_intro": res.SelfIntro,
+             }
+
+
 def who_to_follow(request):  # 我关注了谁
     user_code = request.POST.get('user_code', '')
     user = User.objects.filter(User_code=user_code).first()
-    res = Follow.objects.filter(FollowerID=user).values("FollowedID")  # 应该是一个列表
+    following_users = user.following.all()
+    res = list(following_users)
 
     return JsonResponse(res, safe=False)
 
 
-def who_follow_me(request):
+def who_follow_me(request):  # 我的粉丝有谁
     user_code = request.POST.get('user_code', '')
     user = User.objects.filter(User_code=user_code).first()
-    res = Follow.objects.filter(FollowedID=user).values("FollowerID")  # 应该是一个列表
+    res = user.followers.all().values('UserName')
+    print(res)
 
     return JsonResponse(res, safe=False)
 
@@ -166,9 +186,9 @@ def who_follow_me(request):
 def blocked(request):  # 进行屏蔽操作
     user_code = request.POST.get('user_code', '')
     blocked_code = request.POST.get('user_code', '')
-    user1 = Login.objects.filter(user_code=user_code).first()
-    user2 = Login.objects.filter(user_code=blocked_code).first()
-    user1.blocked_users.add(user2)   # 用户1屏蔽用户2
+    user1 = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
+    user2 = User.objects.filter(UserName=Login.objects.filter(user_code=blocked_code).first()).first()
+    user1.blocked_users.add(user2)  # 用户1屏蔽用户2
 
     blocked_users = user1.blocked_users.filter(id=user2.id)
     if blocked_users.exists():
@@ -176,3 +196,10 @@ def blocked(request):  # 进行屏蔽操作
     else:
         return HttpResponse("更改失败")
 
+
+def follow(request):  # 关注他人
+    user_code = request.POST.get('user_code', '')
+    followed_code = request.POST.get('user_code', '')
+    user1 = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
+    user2 = User.objects.filter(UserName=Login.objects.filter(user_code=followed_code).first()).first()
+    user1.following.add(user2)
