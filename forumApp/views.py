@@ -29,23 +29,10 @@ def register(request):  # 上传用户名和密码
 
         if created:
             Login.objects.filter(username=username).update(password=password, user_code=user_code)
-            data = {
-                'username': obj.username,
-                'adminname': obj.user_code,
-                'code': "成功",
-                'Status Code': 200
-            }
-            return HttpResponse(json.dumps(data), content_type='application/json')  # 注册成功
-            # return HttpResponse(0)
+            User.objects.get_or_create(UserName=obj, PassWord=password)
+            return JsonResponse(1, safe=False)  # 注册成功
         else:
-            data_error = {
-                'username': obj.username,
-                'adminname': obj.user_code,
-                'code': "失败",
-                'Status Code': 404
-            }
-            return HttpResponse(json.dumps(data_error), content_type='application/json')  # 注册失败
-            # return HttpResponse(1)
+            return JsonResponse(2, safe=False)  # 注册失败
     else:
         return HttpResponse('GET请求无效')
 
@@ -201,3 +188,18 @@ def follow(request):  # 关注他人
     user1 = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
     user2 = User.objects.filter(UserName=Login.objects.filter(user_code=followed_code).first()).first()
     user1.following.add(user2)
+
+
+def unfollow(request):  # 取消关注
+    user_code = request.POST.get('user_code', '')
+    followed_code = request.POST.get('user_code', '')
+    user1 = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
+    user2 = User.objects.filter(UserName=Login.objects.filter(user_code=followed_code).first()).first()
+    user1.following.remove(user2)
+
+def post(request):
+    user_code = request.POST.get('user_code', '')
+    type = request.POST.get('type', '')
+    title = request.POST.get('title', '')
+    text = request.POST.get('text', '')
+

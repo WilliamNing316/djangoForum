@@ -15,4 +15,5 @@ urlpatterns = [
     path('who_to_follow', views.who_to_follow),
     path('blocked', views.blocked),
     path('follow', views.follow),
+    path('unfollow', views.unfollow),
 ]
