@@ -1,5 +1,6 @@
 # demo/urls.py
-
+from django.conf import settings
+from django.conf.urls.static import static
 from django.urls import path
 from . import views
 
@@ -16,4 +17,4 @@ urlpatterns = [
     path('blocked', views.blocked),
     path('follow', views.follow),
     path('unfollow', views.unfollow),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

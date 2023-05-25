@@ -26,7 +26,7 @@ class Login(models.Model):
 class User(models.Model):
     nickname = models.CharField(max_length=255, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
-    UserName: Login = models.OneToOneField(Login, on_delete=models.CASCADE, related_name='login_name')
+    UserName = models.OneToOneField(Login, on_delete=models.CASCADE, related_name='login_name')
     Email = models.CharField(max_length=30)
     birthday = models.CharField(max_length=20, blank=False, null=False, default="2000-00-00")
     sex = models.BooleanField(default=True)  # True表示男性，False表示女性
@@ -34,7 +34,7 @@ class User(models.Model):
     SelfIntro = models.CharField(max_length=255, blank=True, null=True)
     following = models.ManyToManyField('self', symmetrical=False, related_name='followers')
     blocked_users = models.ManyToManyField('self', symmetrical=False, related_name='blocked_by')
-    imageSrc = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
+    imageSrc = models.ImageField(upload_to='photos', default="avatar.jpg")
 
     def photo_url(self):
         if self.imageSrc and hasattr(self.imageSrc, 'url'):
@@ -51,19 +51,23 @@ class Post(models.Model):
     type = models.CharField(max_length=30, blank=True, null=True, default="校园新闻")
     title = models.CharField(max_length=255, blank=True, null=True)
     text = models.TextField(blank=False, null=False)
-    picSrc1 = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
-    picSrc2 = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
-    picSrc3 = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
-    picSrc4 = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
-    picSrc5 = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
-    picSrc6 = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
-    picSrc7 = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
-    picSrc8 = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
-    picSrc9 = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
+    picSrc1 = models.ImageField(upload_to='photos', blank=True, null=True)
+    picSrc2 = models.ImageField(upload_to='photos', blank=True, null=True)
+    picSrc3 = models.ImageField(upload_to='photos', blank=True, null=True)
+    picSrc4 = models.ImageField(upload_to='photos', blank=True, null=True)
+    picSrc5 = models.ImageField(upload_to='photos', blank=True, null=True)
+    picSrc6 = models.ImageField(upload_to='photos', blank=True, null=True)
+    picSrc7 = models.ImageField(upload_to='photos', blank=True, null=True)
+    picSrc8 = models.ImageField(upload_to='photos', blank=True, null=True)
+    picSrc9 = models.ImageField(upload_to='photos', blank=True, null=True)
     datetime = models.DateTimeField(default=timezone.now)
     like = models.IntegerField(blank=False, null=False, default=0)  # 点赞
-    who_favorite = models.ManyToManyField(to=User, related_name="favorited_posts")
-
+    who_favorite = models.ManyToManyField(to=User, related_name="favorite_posts")  # 收藏
+    location = models.CharField(max_length=255, blank=True, null=True)  # 位置
+    # 富文本
+    size = models.IntegerField(blank=False, null=False, default=0)
+    color = models.CharField(max_length=30, blank=True, null=True)
+    thick = models.IntegerField(blank=False, null=False, default=0)
     # TODO:点赞收藏评论
 
     def __str__(self):

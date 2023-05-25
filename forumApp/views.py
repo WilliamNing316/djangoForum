@@ -120,12 +120,11 @@ def user_info(request):  # 更改用户数据
     elif change == 'introduction':
         res = User.objects.filter(UserName=user).update(SelfIntro=content)
 
-    elif change == 'avater':
-        # TODO:传图片！
+    elif change == 'avatar':
         res = User.objects.filter(UserName=user).update(SelfIntro=content)
     else:
         res = User.objects.filter(UserName=user).update(nickname="William", phone="18010476877",
-                                                        sex=True,SelfIntro="我是宁哥",
+                                                        sex=True, SelfIntro="我是宁哥",
                                                         imageSrc=request.FILES.get('photo'))  # 最后这里是个图片文件
 
     if res:
@@ -148,11 +147,19 @@ def user_query(request):  # 查询用户数据
              "birthday": res.birthday, "email": res.Email,
              "brief_intro": res.SelfIntro,
              }
+    # TODO:返回！
+
+
+def avatar(request):  # 返回对应用户的头像
+    user_code = request.POST.get('user_code', '')
+    ava = Login.objects.filter(user_code=user_code).first().values('imageSrc')
+    # TODO:传图片回前端
+    return JsonResponse(ava, safe=False)
 
 
 def who_to_follow(request):  # 我关注了谁
     user_code = request.POST.get('user_code', '')
-    user = User.objects.filter(User_code=user_code).first()
+    user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
     following_users = user.following.all()
     res = list(following_users)
 
@@ -161,7 +168,7 @@ def who_to_follow(request):  # 我关注了谁
 
 def who_follow_me(request):  # 我的粉丝有谁
     user_code = request.POST.get('user_code', '')
-    user = User.objects.filter(User_code=user_code).first()
+    user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
     res = user.followers.all().values('UserName')
     print(res)
 
@@ -197,9 +204,65 @@ def unfollow(request):  # 取消关注
     user2 = User.objects.filter(UserName=Login.objects.filter(user_code=followed_code).first()).first()
     user1.following.remove(user2)
 
-def post(request):
+
+def post(request):  # 发布动态
+    # TODO:传照片！
     user_code = request.POST.get('user_code', '')
     type = request.POST.get('type', '')
     title = request.POST.get('title', '')
     text = request.POST.get('text', '')
+    pic1 = request.POST.get('pic1', '')
+    pic2 = request.POST.get('pic2', '')
+    pic3 = request.POST.get('pic3', '')
+    pic4 = request.POST.get('pic4', '')
+    pic5 = request.POST.get('pic5', '')
+    pic6 = request.POST.get('pic6', '')
+    pic7 = request.POST.get('pic7', '')
+    pic8 = request.POST.get('pic8', '')
+    pic9 = request.POST.get('pic9', '')
+    location = request.POST.get('location', '')
+    size = request.POST.get('size', '')
+    color = request.POST.get('color', '')
+    thick = request.POST.get('thick', '')
 
+    user = User.objects.filter(User_code=user_code).first()
+
+    res, create = Post.objects.get_or_create(user_id=user, type=type, title=title, text=text, picSrc1=pic1,
+                                             picSrc2=pic2,
+                                             picSrc3=pic3, picSrc4=pic4, picSrc5=pic5, picSrc6=pic6, picSrc7=pic7,
+                                             picSrc8=pic8,
+                                             picSrc9=pic9, location=location, size=size, color=color, thick=thick)
+    if create:
+        return JsonResponse(1, safe=False)
+
+
+def collect(request):  # 传两个，分别是用户，和这个动态的序号
+    user_code = request.POST.get('user_code', '')
+    post_id = request.POST.get('id', '')
+    user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
+    post_ = Post.objects.filter(id=post_id).first()
+    post_.who_favorite.add(user)
+
+
+def de_collect(request):  # 传两个，分别是用户，和这个动态的序号
+    user_code = request.POST.get('user_code', '')
+    post_id = request.POST.get('id', '')
+    user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
+    post_ = Post.objects.filter(id=post_id).first()
+    post_.who_favorite.remove(user)
+
+
+def like(request):  # 未实现：点赞时发送通知
+    post_id = request.POST.get('id', '')
+    post_ = Post.objects.filter(id=post_id).first()
+    post_.like += 1
+    post_.save()
+
+    return JsonResponse(post_.user_id.UserName.user_code, safe=False)
+
+
+def de_like(request):
+    post_id = request.POST.get('id', '')
+    post_ = Post.objects.filter(id=post_id).first()
+    post_.like -= 1
+    post_.save()
