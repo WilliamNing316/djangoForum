@@ -36,12 +36,6 @@ class User(models.Model):
     blocked_users = models.ManyToManyField('self', symmetrical=False, related_name='blocked_by')
     imageSrc = models.ImageField(upload_to='photos', default="avatar.jpg")
 
-    def photo_url(self):
-        if self.imageSrc and hasattr(self.imageSrc, 'url'):
-            return self.imageSrc.url
-        else:
-            return '/media/default/user.jpg'
-
     def __str__(self):
         return self.UserName
 
@@ -63,14 +57,20 @@ class Post(models.Model):
     datetime = models.DateTimeField(default=timezone.now)
     like = models.IntegerField(blank=False, null=False, default=0)  # 点赞
     who_favorite = models.ManyToManyField(to=User, related_name="favorite_posts")  # 收藏
+    comment_num = models.IntegerField(blank=False, null=False, default=0)  # 评论数
     location = models.CharField(max_length=255, blank=True, null=True)  # 位置
     # 富文本
     size = models.IntegerField(blank=False, null=False, default=0)
     color = models.CharField(max_length=30, blank=True, null=True)
     thick = models.IntegerField(blank=False, null=False, default=0)
-    # TODO:点赞收藏评论
 
     def __str__(self):
         return self.id
 
+
+class Comment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
 

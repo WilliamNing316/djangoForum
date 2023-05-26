@@ -236,7 +236,8 @@ def post(request):  # 发布动态
         return JsonResponse(1, safe=False)
 
 
-def collect(request):  # 传两个，分别是用户，和这个动态的序号
+def collect(request):  # 收藏操作
+    # 传两个，分别是用户，和这个动态的序号
     user_code = request.POST.get('user_code', '')
     post_id = request.POST.get('id', '')
     user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
@@ -266,3 +267,69 @@ def de_like(request):
     post_ = Post.objects.filter(id=post_id).first()
     post_.like -= 1
     post_.save()
+
+
+def my_post(request):  # 返回自己（别人的也可以）的所有的动态
+    user_code = request.POST.get('user_code', '')
+    user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
+    posts = Post.objects.filter(user_id=user).order_by('datetime')  # 按照发布时间排序
+    post_all = []
+    for post_ in posts:
+        uni_post = {"type": post_.type, "title": post_.title, "text": post_.text,
+                    "datetime": post_.datetime, "like": post_.like, "location": post_.location,
+                    "size": post_.size, "color": post_.color, "thick": post_.thick, "id": post_.id
+                    }
+        post_all.append(uni_post)
+
+    #  图片肯定不能跟着一起传，如何传呢
+
+
+def all_post(request):
+    user_code = request.POST.get('user_code', '')
+    # 注意！！！order只有三种取值，datetime、like、comment_num
+    order = request.POST.get('order', '')  # 按照什么排序
+    msg_type = request.POST.get('type', '')  # 展示哪个类型
+    user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
+
+    if msg_type == 'all':
+        posts = Post.objects.all().order_by(order)
+    else:
+        posts = Post.objects.filter(type=msg_type).order_by(order)
+
+    post_all = []
+    for post_ in posts:
+        if post_.user_id not in user.blocked_users:  # 发布者不是被屏蔽的
+            uni_post = {"type": post_.type, "title": post_.title, "text": post_.text,
+                        "datetime": post_.datetime, "like": post_.like, "location": post_.location,
+                        "size": post_.size, "color": post_.color, "thick": post_.thick, "id": post_.id
+                        }
+            post_all.append(uni_post)
+
+
+def create_comment(request):  # 写评论
+    user_code = request.POST.get('user_code', '')
+    content = request.POST.get('content', '')
+    post_id = request.POST.get('post_id', '')
+    user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
+    tmp_post = Post.objects.filter(id=post_id).first
+    tmp_post.comment_num += 1
+    tmp_post.save()
+
+    comment = Comment.objects.create(
+        user=user,
+        post=tmp_post,
+        content=content,
+    )
+
+    return JsonResponse({
+        'message': 'Comment created successfully.',
+        'comment_id': comment.id,
+    })
+
+
+def get_comments(request):  # 获取帖子的所有评论
+    post_id = request.POST.get('post_id', '')
+    comments = Comment.objects.filter(post_id=post_id).values('user__user_id__UserName__user_code', 'content',
+                                                              'created_at')
+
+    return JsonResponse(list(comments), safe=False)
