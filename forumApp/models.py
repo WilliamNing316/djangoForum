@@ -87,3 +87,11 @@ class Message(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+
+class Notification(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')  # 消息的发起者
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')  # 消息的接收者
+    created_at = models.DateTimeField(auto_now_add=True)
+    detail = models.CharField(max_length=10)  # 储存这个post的id
+    type = models.CharField(max_length=30)  # 点赞、回复、还是新消息
+

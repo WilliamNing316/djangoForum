@@ -161,7 +161,7 @@ def avatar(request):  # 返回对应用户的头像
 def who_to_follow(request):  # 我关注了谁
     user_code = request.POST.get('user_code', '')
     user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
-    following_users = user.following.all()
+    following_users = user.following.all().values('UserName__user_code')
     res = list(following_users)
 
     return JsonResponse(res, safe=False)
@@ -170,7 +170,7 @@ def who_to_follow(request):  # 我关注了谁
 def who_follow_me(request):  # 我的粉丝有谁
     user_code = request.POST.get('user_code', '')
     user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
-    res = user.followers.all().values('UserName')
+    res = user.followers.all().values('UserName__user_code')
     print(res)
 
     return JsonResponse(res, safe=False)
@@ -226,7 +226,7 @@ def post(request):  # 发布动态
     color = request.POST.get('color', '')
     thick = request.POST.get('thick', '')
 
-    user = User.objects.filter(User_code=user_code).first()
+    user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
 
     res, create = Post.objects.get_or_create(user_id=user, type=type, title=title, text=text, picSrc1=pic1,
                                              picSrc2=pic2,
@@ -234,6 +234,11 @@ def post(request):  # 发布动态
                                              picSrc8=pic8,
                                              picSrc9=pic9, location=location, size=size, color=color, thick=thick)
     if create:
+        post_id = res.id
+        fans = user.followers.all().values('UserName__user_code')
+        for fan in fans:
+            types = "post"
+            Notification.objects.get_or_create(sender=user_code, recipient=fan, detail=post_id, type=types)
         return JsonResponse(1, safe=False)
 
 
@@ -254,11 +259,16 @@ def de_collect(request):  # 传两个，分别是用户，和这个动态的序�
     post_.who_favorite.remove(user)
 
 
-def like(request):  # 未实现：点赞时发送通知
+def like(request):
+    user_code = request.POST.get('user_code', '')
     post_id = request.POST.get('id', '')
     post_ = Post.objects.filter(id=post_id).first()
     post_.like += 1
     post_.save()
+
+    receiver = post_.user_id.UserName.user_code
+    types = "like"
+    Notification.objects.get_or_create(sender=user_code, recipient=receiver, detail=post_id, type=types)
 
     return JsonResponse(post_.user_id.UserName.user_code, safe=False)
 
@@ -321,6 +331,10 @@ def create_comment(request):  # 写评论
         post=tmp_post,
         content=content,
     )
+
+    receiver = tmp_post.user_id.UserName.user_code
+    types = "comment"
+    Notification.objects.get_or_create(sender=user_code, recipient=receiver, detail=post_id, type=types)
 
     return JsonResponse({
         'message': 'Comment created successfully.',
@@ -425,3 +439,31 @@ def search(request):  # 用空格分割联合查询
 
     return JsonResponse(context)
 
+
+def notify(request):
+    user_code = request.POST.get('user_code', '')
+    res = Notification.objects.filter(recipient=user_code).order_by('-created_at')
+    likes = []
+    replies = []
+    new_posts = []
+    for item in res:
+        tmp = {"sender": item.sender.UserName.user_code,
+               "recipient": item.recipient.UserName.user_code,
+               "created_at": item.created_at,
+               "detail": item.detail
+               }
+
+        if item.type == 'like':
+            likes.append(tmp)
+        elif item.type == 'reply':
+            replies.append(tmp)
+        elif item.type == 'new_post':
+            new_posts.append(tmp)
+
+        context = {
+            'likes': likes,
+            'replies': replies,
+            'new_posts': new_posts,
+        }
+
+        return JsonResponse(context)
