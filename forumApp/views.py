@@ -1,6 +1,7 @@
 import json
 
-from django.shortcuts import render
+from django.db.models import Q
+from django.shortcuts import render, get_object_or_404
 
 # Create your views here.
 
@@ -333,3 +334,94 @@ def get_comments(request):  # 获取帖子的所有评论
                                                               'created_at')
 
     return JsonResponse(list(comments), safe=False)
+
+
+def send_message(request):  # 发送消息，需要指定发送者和接收者
+    # TODO:发送之后通知接收者更新会话
+    # 获取输入参数
+    sender_id = request.POST.get('sender_id', '')
+    recipient_id = request.POST.get('recipient_id', '')
+    content = request.POST.get('content', '')
+
+    # 获取用户对象
+    sender = User.objects.filter(UserName=Login.objects.filter(user_code=sender_id).first()).first()
+    recipient = User.objects.filter(UserName=Login.objects.filter(user_code=recipient_id).first()).first()
+
+    # 获取或创建对话对象
+    conversation, created = Conversation.objects.get_or_create(
+        participant1=sender,
+        participant2=recipient
+    )
+
+    # 创建消息对象
+    message = Message.objects.create(
+        sender=sender,
+        conversation=conversation,
+        content=content
+    )
+
+    # 返回成功响应
+    return JsonResponse({'message': 'Message sent successfully.'})
+
+
+def get_messages(request):  # 获取两个用户全部聊天记录
+    # 获取输入参数
+    user1_id = request.GET.get('user1_id')
+    user2_id = request.GET.get('user2_id')
+
+    # 获取用户对象
+    user1 = User.objects.filter(UserName=Login.objects.filter(user_code=user1_id).first()).first()
+    user2 = User.objects.filter(UserName=Login.objects.filter(user_code=user2_id).first()).first()
+
+    # 获取对话对象
+    conversation = get_object_or_404(Conversation, participant1=user1, participant2=user2)
+
+    # 获取消息对象
+    messages = Message.objects.filter(conversation=conversation).order_by('created_at')
+
+    # 将消息对象转化为字典列表
+    messages_list = []
+    for message in messages:
+        messages_list.append({
+            'sender_id': message.sender.id,
+            'content': message.content,
+            'created_at': message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        })
+
+    # 返回消息列表
+    return JsonResponse({'messages': messages_list})
+
+
+def search(request):  # 用空格分割联合查询
+    query = request.GET.get('q', '')
+    if len(query) > 100:
+        return JsonResponse({"error": "Search query is too long."}, status=400)
+    keywords = query.split()
+
+    if keywords:
+        username_query = Q()
+        post_query = Q()
+        comment_query = Q()
+
+        for keyword in keywords:
+            username_query |= Q(nickname__icontains=keyword)
+            post_query |= Q(title__icontains=keyword)
+            post_query |= Q(text__icontains=keyword)
+            comment_query |= Q(content__icontains=keyword)
+
+        user_results = User.objects.filter(username_query)
+        post_results = Post.objects.filter(post_query)
+        comment_results = Comment.objects.filter(comment_query)
+    else:
+        user_results = []
+        post_results = []
+        comment_results = []
+    context = {
+        'user_results': user_results,
+        'post_results': post_results,
+        'comment_result': comment_results,
+        'query': query,
+    }
+
+    return JsonResponse(context)
+
