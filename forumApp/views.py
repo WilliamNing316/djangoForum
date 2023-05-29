@@ -44,31 +44,13 @@ def login(request):  # 登录
         password = request.POST.get('password', '')
         res = Login.objects.filter(username=username, password=password).first()  # TODO:从前端接数据
         if res:
-            data = {
-                'username': res.username,
-                'adminname': res.user_code,
-                'code': "成功",
-                'Status Code': 200
-            }
-            return HttpResponse(json.dumps(data), content_type='application/json')  # 登陆成功
+            return JsonResponse(1, safe=False)  # 登陆成功
         else:
             user_res = Login.objects.filter(username=username)
             if user_res:
-                data = {
-                    'username': "",
-                    'adminname': "",
-                    'code': "失败",
-                    'Status Code': 500
-                }
-                return HttpResponse(json.dumps(data), content_type='application/json')  # 密码错误
+                return JsonResponse(2, safe=False)  # 密码错误
             else:
-                data = {
-                    'username': "",
-                    'adminname': "",
-                    'code': "失败",
-                    'Status Code': 404
-                }
-                return HttpResponse(json.dumps(data), content_type='application/json')  # 用户名不存在
+                return JsonResponse(3, safe=False)  # 用户名不存在
 
     else:
         return HttpResponse('GET请求无效')
@@ -122,7 +104,7 @@ def user_info(request):  # 更改用户数据
         res = User.objects.filter(UserName=user).update(SelfIntro=content)
 
     elif change == 'avatar':
-        res = User.objects.filter(UserName=user).update(SelfIntro=content)
+        res = User.objects.filter(UserName=user).update(imageSrc=content)
     else:
         res = User.objects.filter(UserName=user).update(nickname="William", phone="18010476877",
                                                         sex=True, SelfIntro="我是宁哥",
@@ -440,7 +422,7 @@ def search(request):  # 用空格分割联合查询
     return JsonResponse(context)
 
 
-def notify(request):
+def notify(request):  # 按照点赞、回复、关注人发布新消息分别返回
     user_code = request.POST.get('user_code', '')
     res = Notification.objects.filter(recipient=user_code).order_by('-created_at')
     likes = []
