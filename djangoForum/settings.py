@@ -17,8 +17,9 @@ from django.template.context_processors import media
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media').replace('\\', '/')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -85,7 +86,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'forum',         # 数据库名，Django不会帮你创建，需要自己进入数据库创建。
         'USER': 'root',       # 设置的数据库用户名
-        'PASSWORD': '',   # 设置的密码
+        'PASSWORD': 'William316',   # 设置的密码
         'HOST': 'localhost',    # 本地主机或数据库服务器的ip
         'PORT': '3306',         # 数据库使用的端口
     }
