@@ -52,6 +52,7 @@ class Post(models.Model):
     who_favorite = models.ManyToManyField(to=User, related_name="favorite_posts")  # 收藏
     comment_num = models.IntegerField(blank=False, null=False, default=0)  # 评论数
     location = models.CharField(max_length=255, blank=True, null=True)  # 位置
+    video = models.FileField(upload_to='video/', blank=True, null=True)
 
     def __str__(self):
         return self.id
@@ -83,4 +84,3 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     detail = models.CharField(max_length=10)  # 储存这个post的id
     type = models.CharField(max_length=30)  # 点赞、回复、还是新消息
-

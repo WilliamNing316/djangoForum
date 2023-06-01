@@ -34,5 +34,6 @@ urlpatterns = [
     path('change_avatar/', views.change_avatar),
     path('avatar/', views.avatar),
     path('post_photo/', views.post_photo),
-    path('notify_num/', views.notify_num)
+    path('notify_num/', views.notify_num),
+    path('post_video/', views.post_video),
 ]

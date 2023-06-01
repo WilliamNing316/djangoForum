@@ -262,6 +262,7 @@ def post(request):  # 发布动态
     pic7 = request.FILES.get('pic7', '')
     pic8 = request.FILES.get('pic8', '')
     pic9 = request.FILES.get('pic9', '')
+    video = request.FILES.get('video', '')
     location = request.POST.get('location', '')
 
     user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
@@ -294,6 +295,9 @@ def post(request):  # 发布动态
     if pic9 != '':
         file_content = ContentFile(pic9.read())
         res.picSrc9.save(pic9.name, file_content)
+    if video != '':
+        file_content = ContentFile(video.read())
+        res.video.save(video.name, file_content)
 
     if create:
         post_id = res.id
@@ -411,6 +415,7 @@ def all_post(request):
     return JsonResponse("None", safe=False)
 
 
+@transaction.atomic
 def post_photo(request):  # 返回一个动态对应的一张照片
     post_id = request.POST.get('id', '')
     i = request.POST.get('i', '')
@@ -429,6 +434,24 @@ def post_photo(request):  # 返回一个动态对应的一张照片
             return HttpResponseNotFound('图片未找到')
     else:
         return HttpResponseNotFound('图片未找到')
+
+
+@transaction.atomic
+def post_video(request):
+    post_id = request.POST.get('id', '')
+    post_ = Post.objects.filter(id=post_id).values('video')
+    if post_[0]['video'] != '':
+        full_path = settings.MEDIA_ROOT + '/' + post_[0]['video']
+        content_type, _ = guess_type(full_path)
+        try:
+            with open(full_path, 'rb') as file:
+                response = HttpResponse(file.read(), content_type=content_type)
+                response['Content-Encoding'] = 'utf-8'
+                return response
+        except FileNotFoundError:
+            return HttpResponseNotFound('视频未找到')
+    else:
+        return HttpResponseNotFound('视频未找到')
 
 
 @transaction.atomic
