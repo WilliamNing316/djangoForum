@@ -36,4 +36,7 @@ urlpatterns = [
     path('post_photo/', views.post_photo),
     path('notify_num/', views.notify_num),
     path('post_video/', views.post_video),
+    path('start_conversation/', views.start_conversation),
+    path('collection/', views.collection),
+    path('uni_post/', views.uni_post),
 ]

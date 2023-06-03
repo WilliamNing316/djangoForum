@@ -50,6 +50,7 @@ class Post(models.Model):
     datetime = models.DateTimeField(default=timezone.now)
     like = models.IntegerField(blank=False, null=False, default=0)  # 点赞
     who_favorite = models.ManyToManyField(to=User, related_name="favorite_posts")  # 收藏
+    favorite_num = models.IntegerField(blank=False, null=False, default=0)  # 收藏数
     comment_num = models.IntegerField(blank=False, null=False, default=0)  # 评论数
     location = models.CharField(max_length=255, blank=True, null=True)  # 位置
     video = models.FileField(upload_to='video/', blank=True, null=True)
