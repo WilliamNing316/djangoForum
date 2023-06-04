@@ -6,7 +6,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     git clone https://github.com/WilliamNing316/djangoForum.git && \
-    pip install -r /djangoForum/requirements.txt
+    pip install -r /djangoForum/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 WORKDIR /djangoForum
 
