@@ -7,6 +7,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
     echo "Asia/Shanghai" > /etc/timezone && \
     git clone https://github.com/WilliamNing316/djangoForum.git && \
     pip install -r /djangoForum/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple && \
+    chmod +x /djangoForum/manage.py && \
     apk del .build-deps
 
 WORKDIR /djangoForum
