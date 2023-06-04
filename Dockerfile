@@ -1,12 +1,13 @@
 FROM python:3.9-alpine
 
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories &&  \
-    apk update && \
-    apk add --no-cache wget git tzdata && \
+    apk add --update --no-cache mariadb-connector-c-dev && \
+    apk add --no-cache --virtual .build-deps wget git tzdata mariadb-dev mariadb-dev gcc && \
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     git clone https://github.com/WilliamNing316/djangoForum.git && \
-    pip install -r /djangoForum/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+    pip install -r /djangoForum/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple && \
+    apk del .build-deps
 
 WORKDIR /djangoForum
 
