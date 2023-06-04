@@ -51,6 +51,8 @@ def login(request):  # 登录
         res = Login.objects.filter(username=username, password=password).first()  # TODO:从前端接数据
 
         if res:
+            print(res.user_code)
+            print(type(res.user_code))
             return JsonResponse(res.user_code, safe=False)  # 登陆成功
         else:
             user_res = Login.objects.filter(username=username)
@@ -86,8 +88,8 @@ def user_info(request):  # 更改用户数据
         user_code = request.POST.get('user_code', '')
         change = request.POST.get('change', '')  # 修改的部分
         content = request.POST.get('content', '')  # 修改内容
-        user = Login.objects.filter(user_code=user_code).first()
-
+        user = Login.objects.filter(user_code=user_code.strip('"')).first()
+        print(change)
         if change == 'nickname':
 
             res = User.objects.filter(UserName=user).update(nickname=content)
@@ -111,12 +113,9 @@ def user_info(request):  # 更改用户数据
         elif change == 'introduction':
             res = User.objects.filter(UserName=user).update(SelfIntro=content)
 
-        else:
-            res = User.objects.filter(UserName=user).update(nickname="William", phone="18010476877",
-                                                            sex=True, SelfIntro="我是宁哥")  # 最后这里是个图片文件
-
         if res:
             return JsonResponse(res, safe=False)
+
         return HttpResponse("更改失败！")
 
     else:
@@ -146,19 +145,26 @@ def user_query(request):  # 查询用户数据
     # 前端只需要传一个用户序号，或者登陆时的用户名
     if request.method == 'POST':
         query = request.POST.get('user_code', '')
-        user = Login.objects.filter(user_code=query).first()
-        res = User.objects.filter(UserName=user).first()
+        print(query)
+        user = Login.objects.filter(user_code=query.strip('"')).first()
 
-        if res.sex:
-            gender = "男"
+        res = User.objects.filter(UserName=user).first()
+        if res:
+            if res.sex:
+                gender = "男"
+            else:
+                gender = "女"
+            dict_ = {"account": res.UserName.username, "ID": res.UserName.user_code,
+                     "username": res.nickname, "gender": gender,
+                     "intro": res.SelfIntro,
+                     }
+            return JsonResponse(dict_, safe=False)
         else:
-            gender = "女"
-        dict_ = {"username": res.UserName.username, "user_code": res.UserName.user_code,
-                 "nickname": res.nickname, "gender": gender, "phone": res.phone,
-                 "birthday": res.birthday, "email": res.Email,
-                 "brief_intro": res.SelfIntro,
-                 }
-        return JsonResponse(dict_, safe=False)
+            dict_ = {"account": "", "ID": "",
+                     "username": "", "gender": "",
+                     "intro": "res.SelfIntro",
+                     }
+            return JsonResponse(dict_, safe=False)
     else:
         return HttpResponse('GET请求无效')
 
@@ -167,7 +173,7 @@ def user_query(request):  # 查询用户数据
 def avatar(request):  # 返回对应用户的头像
     if request.method == 'POST':
         user_code = request.POST.get('user_code', '')
-        user = Login.objects.filter(user_code=user_code).first()
+        user = Login.objects.filter(user_code=user_code.strip('"')).first()
         ava = User.objects.filter(UserName=user).values('imageSrc')
 
         full_path = settings.MEDIA_ROOT + '/' + ava[0]['imageSrc']
@@ -177,6 +183,7 @@ def avatar(request):  # 返回对应用户的头像
             with open(full_path, 'rb') as file:
                 response = HttpResponse(file.read(), content_type=content_type)
                 response['Content-Encoding'] = 'utf-8'
+
                 return response
         except FileNotFoundError:
             return HttpResponseNotFound('图片未找到')
@@ -189,11 +196,14 @@ def avatar(request):  # 返回对应用户的头像
 def who_to_follow(request):  # 我关注了谁
     if request.method == 'POST':
         user_code = request.POST.get('user_code', '')
-        user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
-        following_users = user.following.all().values('UserName__user_code')
-        res = list(following_users)
-        print(res)
-        return JsonResponse(res, safe=False)
+        user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code.strip('"')).first()).first()
+        following_users = user.following.all().values_list('UserName__user_code', flat=True)
+        if following_users:
+            res = list(following_users)
+            print(res)
+            return JsonResponse(res, safe=False)
+        else:
+            return JsonResponse([], safe=False)
 
     else:
         return HttpResponse('GET请求无效')
@@ -203,8 +213,8 @@ def who_to_follow(request):  # 我关注了谁
 def who_follow_me(request):  # 我的粉丝有谁
     if request.method == 'POST':
         user_code = request.POST.get('user_code', '')
-        user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
-        follower_users = user.followers.all().values('UserName__user_code')
+        user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code.strip('"')).first()).first()
+        follower_users = user.followers.all().values_list('UserName__user_code', flat=True)
         res = list(follower_users)
         print(res)
 
@@ -288,7 +298,6 @@ def unfollow(request):  # 取消关注
 @transaction.atomic
 def post(request):  # 发布动态
     if request.method == 'POST':
-        # TODO:传照片！
         user_code = request.POST.get('user_code', '')
         mtype = request.POST.get('type', '')
         title = request.POST.get('title', '')
@@ -417,9 +426,12 @@ def like(request):
     if request.method == 'POST':
         user_code = request.POST.get('user_code', '')
         post_id = request.POST.get('id', '')
+        user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
         post_ = Post.objects.filter(id=post_id).first()
-        post_.like += 1
-        post_.save()
+        if user and post_:
+            post_.like += 1
+            post_.who_like.add(user)
+            post_.save()
 
         receiver = post_.user_id.UserName.user_code
         print(user_code)
@@ -436,12 +448,17 @@ def like(request):
 @transaction.atomic
 def de_like(request):
     if request.method == 'POST':
+        user_code = request.POST.get('user_code', '')
         post_id = request.POST.get('id', '')
+        user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
         post_ = Post.objects.filter(id=post_id).first()
-        if post_.like > 0:
-            post_.like -= 1
-            post_.save()
-            return JsonResponse("成功", safe=False)
+        if user and post_:
+            if post_.like > 0:
+                post_.like -= 1
+                post_.who_like.remove(user)
+                post_.save()
+
+                return JsonResponse("成功", safe=False)
         return JsonResponse("失败", safe=False)
     else:
         return HttpResponse('GET请求无效')
@@ -451,18 +468,45 @@ def de_like(request):
 def my_post(request):  # 返回自己（别人的也可以）的所有的动态
     if request.method == 'POST':
         user_code = request.POST.get('user_code', '')
-        user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
+        user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code.strip('"')).first()).first()
         posts = Post.objects.filter(user_id=user).order_by('-datetime')  # 按照发布时间，反序排序
         post_all = []
         for post_ in posts:
-            uni_post = {"type": post_.type, "title": post_.title, "text": post_.text,
-                        "datetime": post_.datetime, "like": post_.like, "location": post_.location,
-                        "id": post_.id, "favorite": post_.favorite_num, "comment": post_.comment_num,
-                        "user": post_.user_id.UserName.user_code
+            liked = user in post_.who_like.all()
+            collected = user in post_.who_favorite.all()
+            if post_.video:
+                print(post_.video)
+                video_path = 'media' + '/' + post_.video.name
+            else:
+                video_path = None
+
+            # 初始化一个空列表来保存所有图片的路径
+            image_paths = []
+
+            # 创建一个包含所有图片字段的列表
+            image_fields = [post_.picSrc1, post_.picSrc2, post_.picSrc3, post_.picSrc4, post_.picSrc5, post_.picSrc6,
+                            post_.picSrc7, post_.picSrc8, post_.picSrc9]
+
+            # 遍历图片字段
+            for image in image_fields:
+                # 如果图片存在
+                if image:
+                    # 获取图片的路径，并添加到图片路径列表中
+                    image_paths.append('media' + '/' + image.name)
+                else:
+                    # 如果图片不存在，添加 None 到图片路径列表中
+                    image_paths.append(None)
+
+            uni_post = {"mTag": post_.type, "mTitle": post_.title, "mContent": post_.text,
+                        "mDate": post_.datetime, "mPraise": post_.like, "mPosition": post_.location,
+                        "id": post_.id, "mCollect": post_.favorite_num, "mComment": post_.comment_num,
+                        "mAuthor": post_.user_id.nickname, "up_not": liked,
+                        "collect_not": collected, "mVideo": video_path, "mImageList": image_paths,
+                        "userID": post_.user_id.UserName.user_code
                         }
             post_all.append(uni_post)
+        print(post_all)
 
-        #  图片肯定不能跟着一起传，如何传呢
         return JsonResponse(post_all, safe=False)
     else:
         return HttpResponse('GET请求无效')
@@ -475,7 +519,7 @@ def all_post(request):
         # 注意！！！order只有三种取值，datetime、like、comment_num
         order = request.POST.get('order', '')  # 按照什么排序
         msg_type = request.POST.get('type', '')  # 展示哪个类型
-        user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code).first()).first()
+        user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code.strip('"')).first()).first()
 
         if msg_type == 'all':
             posts = Post.objects.all().order_by("-" + order)
@@ -487,13 +531,39 @@ def all_post(request):
             print("不为空！")
             for post_ in posts:
                 if not user.blocked_users.filter(id=post_.user_id.id).exists():  # 发布者不是被屏蔽的
-                    uni_post = {"type": post_.type, "title": post_.title, "text": post_.text,
-                                "datetime": post_.datetime, "like": post_.like, "location": post_.location,
-                                "id": post_.id, "favorite": post_.favorite_num, "comment": post_.comment_num,
-                                "user": post_.user_id.UserName.user_code
+                    liked = user in post_.who_like.all()
+                    collected = user in post_.who_favorite.all()
+                    if post_.video:
+                        video_path = 'media' + '/' + post_.video.name
+                    else:
+                        video_path = None
+
+                    # 初始化一个空列表来保存所有图片的路径
+                    image_paths = []
+
+                    # 创建一个包含所有图片字段的列表
+                    image_fields = [post_.picSrc1, post_.picSrc2, post_.picSrc3, post_.picSrc4, post_.picSrc5,
+                                    post_.picSrc6,
+                                    post_.picSrc7, post_.picSrc8, post_.picSrc9]
+
+                    # 遍历图片字段
+                    for image in image_fields:
+                        # 如果图片存在
+                        if image:
+                            # 获取图片的路径，并添加到图片路径列表中
+                            image_paths.append('media' + '/' + image.name)
+                        else:
+                            # 如果图片不存在，添加 None 到图片路径列表中
+                            image_paths.append(None)
+
+                    uni_post = {"mTag": post_.type, "mTitle": post_.title, "mContent": post_.text,
+                                "mDate": post_.datetime, "mPraise": post_.like, "mPosition": post_.location,
+                                "id": post_.id, "mCollect": post_.favorite_num, "mComment": post_.comment_num,
+                                "mAuthor": post_.user_id.nickname, "up_not": liked,
+                                "collect_not": collected, "mVideo": video_path, "mImageList": image_paths,
+                                "userID": post_.user_id.UserName.user_code
                                 }
                     post_all.append(uni_post)
-
             return JsonResponse(post_all, safe=False)
 
         return JsonResponse("None", safe=False)
@@ -504,14 +574,43 @@ def all_post(request):
 @transaction.atomic
 def uni_post(request):
     if request.method == 'POST':
+        user_code = request.POST.get('user_code', '')
         post_id = request.POST.get('post_id', '')
         post_ = Post.objects.filter(id=post_id).first()
+        user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code.strip('"')).first()).first()
 
         if post_ is not None:
-            uni_post = {"type": post_.type, "title": post_.title, "text": post_.text,
-                        "datetime": post_.datetime, "like": post_.like, "location": post_.location,
-                        "id": post_.id, "favorite": post_.favorite_num, "comment": post_.comment_num,
-                        "user": post_.user_id.UserName.user_code
+            liked = user in post_.who_like.all()
+            collected = user in post_.who_favorite.all()
+            if post_.video:
+                video_path = 'media' + '/' + post_.video.name
+            else:
+                video_path = None
+
+            # 初始化一个空列表来保存所有图片的路径
+            image_paths = []
+
+            # 创建一个包含所有图片字段的列表
+            image_fields = [post_.picSrc1, post_.picSrc2, post_.picSrc3, post_.picSrc4, post_.picSrc5,
+                            post_.picSrc6,
+                            post_.picSrc7, post_.picSrc8, post_.picSrc9]
+
+            # 遍历图片字段
+            for image in image_fields:
+                # 如果图片存在
+                if image:
+                    # 获取图片的路径，并添加到图片路径列表中
+                    image_paths.append('media' + '/' + image.name)
+                else:
+                    # 如果图片不存在，添加 None 到图片路径列表中
+                    image_paths.append(None)
+
+            uni_post = {"mTag": post_.type, "mTitle": post_.title, "mContent": post_.text,
+                        "mDate": post_.datetime, "mPraise": post_.like, "mPosition": post_.location,
+                        "id": post_.id, "mCollect": post_.favorite_num, "mComment": post_.comment_num,
+                        "mAuthor": post_.user_id.nickname, "up_not": liked,
+                        "collect_not": collected, "mVideo": video_path, "mImageList": image_paths,
+                        "userID": post_.user_id.UserName.user_code
                         }
 
             return JsonResponse(uni_post, safe=False)
@@ -526,6 +625,9 @@ def post_photo(request):  # 返回一个动态对应的一张照片
     if request.method == 'POST':
         post_id = request.POST.get('id', '')
         i = request.POST.get('i', '')
+        print(post_id)
+        print(i)
+
         pic_fields = [f'picSrc{i}' for i in range(1, 10)]
         post_ = Post.objects.filter(id=post_id).values(pic_fields[int(i)])
 
@@ -549,6 +651,7 @@ def post_photo(request):  # 返回一个动态对应的一张照片
 def post_video(request):
     if request.method == 'POST':
         post_id = request.POST.get('id', '')
+        print(post_id)
         post_ = Post.objects.filter(id=post_id).values('video')
         if post_[0]['video'] != '':
             full_path = settings.MEDIA_ROOT + '/' + post_[0]['video']
@@ -699,7 +802,7 @@ def get_messages(request):  # 获取两个用户全部聊天记录
             })
 
         # 返回消息列表
-        return JsonResponse({'messages': messages_list})
+        return JsonResponse(messages_list)
     else:
         return HttpResponse('GET请求无效')
 
