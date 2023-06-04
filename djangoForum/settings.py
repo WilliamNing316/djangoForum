@@ -87,7 +87,7 @@ DATABASES = {
         'NAME': 'forum',         # 数据库名，Django不会帮你创建，需要自己进入数据库创建。
         'USER': 'root',       # 设置的数据库用户名
         'PASSWORD': 'William316',   # 设置的密码
-        'HOST': 'localhost',    # 本地主机或数据库服务器的ip
+        'HOST': '127.0.0.1',    # 本地主机或数据库服务器的ip
         'PORT': '3306',         # 数据库使用的端口
     }
 }
