@@ -2,7 +2,7 @@ FROM python:3.9-alpine
 
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories &&  \
     apk add --update --no-cache mariadb-connector-c-dev && \
-    apk add --no-cache --virtual .build-deps wget git tzdata mariadb-dev mariadb-dev gcc && \
+    apk add --no-cache --virtual .build-deps wget git tzdata mariadb-dev mariadb-dev gcc g++ && \
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     git clone https://github.com/WilliamNing316/djangoForum.git && \

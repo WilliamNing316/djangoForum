@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  app-db:
+    image: mysql:5.7
+    entrypoint:
+      - MYSQL_ROOT_PASSWORD=William316
+    restart: always
+    networks:
+      - django
+    volumes:
+      - /data/mysql/log:/var/log/mysql
+      - /data/mysql/data:/var/lib/mysql
+  app-server:
+    build:
+      dockerfile: .
+    depends_on:
+      - app-db
+    container_name: server-app
+    ports:
+      - 8000:8000
+    volumes:
+      - /data/app:/djangoForum
+    networks:
+      django:
+networks:
+  django:
