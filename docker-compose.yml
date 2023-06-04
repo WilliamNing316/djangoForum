@@ -12,7 +12,10 @@ services:
       - /data/mysql/data:/var/lib/mysql
   app-server:
     build:
-      dockerfile: .
+      context: .
+      dockerfile: Dockerfile
+      labels:
+        server-app: v1
     depends_on:
       - app-db
     container_name: server-app
