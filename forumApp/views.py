@@ -476,7 +476,7 @@ def my_post(request):  # 返回自己（别人的也可以）的所有的动态
             collected = user in post_.who_favorite.all()
             if post_.video:
                 print(post_.video)
-                video_path = 'media' + '/' + post_.video.name
+                video_path = post_.video.name
             else:
                 video_path = None
 
@@ -492,7 +492,7 @@ def my_post(request):  # 返回自己（别人的也可以）的所有的动态
                 # 如果图片存在
                 if image:
                     # 获取图片的路径，并添加到图片路径列表中
-                    image_paths.append('media' + '/' + image.name)
+                    image_paths.append(image.name)
                 else:
                     # 如果图片不存在，添加 None 到图片路径列表中
                     image_paths.append(None)
@@ -534,7 +534,7 @@ def all_post(request):
                     liked = user in post_.who_like.all()
                     collected = user in post_.who_favorite.all()
                     if post_.video:
-                        video_path = 'media' + '/' + post_.video.name
+                        video_path = post_.video.name
                     else:
                         video_path = None
 
@@ -551,7 +551,7 @@ def all_post(request):
                         # 如果图片存在
                         if image:
                             # 获取图片的路径，并添加到图片路径列表中
-                            image_paths.append('media' + '/' + image.name)
+                            image_paths.append(image.name)
                         else:
                             # 如果图片不存在，添加 None 到图片路径列表中
                             image_paths.append(None)
@@ -583,7 +583,7 @@ def uni_post(request):
             liked = user in post_.who_like.all()
             collected = user in post_.who_favorite.all()
             if post_.video:
-                video_path = 'media' + '/' + post_.video.name
+                video_path = post_.video.name
             else:
                 video_path = None
 
@@ -600,7 +600,7 @@ def uni_post(request):
                 # 如果图片存在
                 if image:
                     # 获取图片的路径，并添加到图片路径列表中
-                    image_paths.append('media' + '/' + image.name)
+                    image_paths.append(image.name)
                 else:
                     # 如果图片不存在，添加 None 到图片路径列表中
                     image_paths.append(None)

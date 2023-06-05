@@ -23,4 +23,6 @@ services:
       - app-db
     network_mode: host
     container_name: server-app
+    volumes:
+      - /data/media:/djangoForum/media
     restart: always
