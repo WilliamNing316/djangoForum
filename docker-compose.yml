@@ -1,17 +1,18 @@
 version: '3.3'
 services:
   app-db:
-    image: mysql:5.7
+    image: mysql:8.0.30
     environment:
       - MYSQL_ROOT_PASSWORD=William316
     network_mode: host
     restart: always
     container_name: db
-#    ports:
-#      - 3306:3306
     volumes:
       - /data/mysql/log:/var/log/mysql
       - /data/mysql/data:/var/lib/mysql
+    command:
+      - mysqld
+      - --default-authentication-plugin=mysql_native_password
   app-server:
     build:
       context: .
@@ -20,8 +21,6 @@ services:
         server-app: v1
     depends_on:
       - app-db
-#    ports:
-#      - 8000:8000
     network_mode: host
     container_name: server-app
     restart: always

@@ -1,5 +1,6 @@
 FROM python:3.9-alpine
 
+WORKDIR /
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories &&  \
     apk add --update --no-cache mariadb-connector-c-dev && \
     apk add --no-cache --virtual .build-deps wget git tzdata mariadb-dev mariadb-dev gcc g++ && \
@@ -14,4 +15,5 @@ WORKDIR /djangoForum
 
 EXPOSE 8000
 
-ENTRYPOINT python manage.py runserver 0.0.0.0:8000
+#CMD [python manage.py runserver 0.0.0.0:8000
+CMD [ "python", "manage.py", "runserver", "0.0.0.0:8000"]
