@@ -156,13 +156,13 @@ def user_query(request):  # 查询用户数据
                 gender = "女"
             dict_ = {"account": res.UserName.username, "ID": res.UserName.user_code,
                      "username": res.nickname, "gender": gender,
-                     "intro": res.SelfIntro,
+                     "intro": res.SelfIntro, "image_url": res.imageSrc.name
                      }
             return JsonResponse(dict_, safe=False)
         else:
             dict_ = {"account": "", "ID": "",
                      "username": "", "gender": "",
-                     "intro": "res.SelfIntro",
+                     "intro": "res.SelfIntro", "image_url": ""
                      }
             return JsonResponse(dict_, safe=False)
     else:
@@ -357,7 +357,7 @@ def post(request):  # 发布动态
                 recipient = User.objects.filter(
                     UserName=Login.objects.filter(user_code=fan['UserName__user_code']).first()).first()
                 Notification.objects.get_or_create(sender=sender, recipient=recipient, detail=str(post_id), type=types)
-            return JsonResponse(1, safe=False)
+            return JsonResponse(res.id, safe=False)
         else:
             return JsonResponse("创建失败", safe=False)
     else:
@@ -476,7 +476,7 @@ def my_post(request):  # 返回自己（别人的也可以）的所有的动态
             collected = user in post_.who_favorite.all()
             if post_.video:
                 print(post_.video)
-                video_path = post_.video.name+""
+                video_path = post_.video.name + ""
             else:
                 video_path = None
 
@@ -492,7 +492,7 @@ def my_post(request):  # 返回自己（别人的也可以）的所有的动态
                 # 如果图片存在
                 if image:
                     # 获取图片的路径，并添加到图片路径列表中
-                    image_paths.append(image.name+"")
+                    image_paths.append(image.name + "")
                 else:
                     # 如果图片不存在，添加 None 到图片路径列表中
                     image_paths.append(None)
@@ -519,13 +519,28 @@ def all_post(request):
         # 注意！！！order只有三种取值，datetime、like、comment_num
         order = request.POST.get('order', '')  # 按照什么排序
         msg_type = request.POST.get('type', '')  # 展示哪个类型
+        other = request.POST.get('other', '')
         user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code.strip('"')).first()).first()
+        following_users = user.following.all().values_list('UserName__user_code', flat=True)
 
         if msg_type == 'all':
-            posts = Post.objects.all().order_by("-" + order)
+            if other == 'all':
+                posts = Post.objects.all().order_by("-" + order)
+            elif other == "我的关注":
+                posts = Post.objects.all().filter(Q(user_id__in=following_users)).order_by("-" + order)
+            elif other == "最近热度":
+                posts = Post.objects.all().filter(Q(comment_num__gt=1) | Q(like__gt=1)).order_by("-" + order)
+            else:
+                posts = Post.objects.all().order_by("-" + order)
         else:
-            posts = Post.objects.filter(type=msg_type).order_by("-" + order)
-
+            if other == 'all':
+                posts = Post.objects.filter(type=msg_type).order_by("-" + order)
+            elif other == "我的关注":
+                posts = Post.objects.filter(type=msg_type).filter(Q(user_id__in=following_users)).order_by("-" + order)
+            elif other == "最近热度":
+                posts = Post.objects.all().filter(Q(comment_num__gt=1) | Q(like__gt=1)).order_by("-" + order)
+            else:
+                posts = Post.objects.all().order_by("-" + order)
         if posts is not None:
             post_all = []
             print("不为空！")
@@ -534,7 +549,7 @@ def all_post(request):
                     liked = user in post_.who_like.all()
                     collected = user in post_.who_favorite.all()
                     if post_.video:
-                        video_path = post_.video.name+""
+                        video_path = post_.video.name + ""
                     else:
                         video_path = None
 
@@ -551,7 +566,7 @@ def all_post(request):
                         # 如果图片存在
                         if image:
                             # 获取图片的路径，并添加到图片路径列表中
-                            image_paths.append(image.name+"")
+                            image_paths.append(image.name + "")
                         else:
                             # 如果图片不存在，添加 None 到图片路径列表中
                             image_paths.append(None)
@@ -583,7 +598,7 @@ def uni_post(request):
             liked = user in post_.who_like.all()
             collected = user in post_.who_favorite.all()
             if post_.video:
-                video_path = post_.video.name+""
+                video_path = post_.video.name + ""
             else:
                 video_path = None
 
@@ -600,7 +615,7 @@ def uni_post(request):
                 # 如果图片存在
                 if image:
                     # 获取图片的路径，并添加到图片路径列表中
-                    image_paths.append(image.name+"")
+                    image_paths.append(image.name + "")
                 else:
                     # 如果图片不存在，添加 None 到图片路径列表中
                     image_paths.append(None)
@@ -705,10 +720,21 @@ def create_comment(request):  # 写评论
 def get_comments(request):  # 获取帖子的所有评论
     if request.method == 'POST':
         post_id = request.POST.get('post_id', '')
-        comments = Comment.objects.filter(post_id=post_id).values('user__UserName__user_code', 'content',
-                                                                  'created_at').order_by('-created_at')
+        print(post_id)
+        comments = Comment.objects.filter(post_id=post_id.strip('"')).order_by('-created_at')
+        all_comment = []
+        if comments:
+            for comment in comments:
+                uni_comment = {"mImageResource": comment.user.imageSrc.name, "nick_name": comment.user.nickname,
+                               "mAccount": comment.user.UserName.user_code, "comment_content": comment.content,
+                               "mDate": comment.created_at
+                               }
+                all_comment.append(uni_comment)
 
-        return JsonResponse(list(comments), safe=False)
+            print(all_comment)
+            return JsonResponse(all_comment, safe=False)
+        else:
+            return JsonResponse(all_comment, safe=False)
     else:
         return HttpResponse('GET请求无效')
 
@@ -811,6 +837,7 @@ def get_messages(request):  # 获取两个用户全部聊天记录
 def search(request):  # 用空格分割联合查询
     if request.method == 'POST':
         query = request.POST.get('q', '')
+        search_type = request.POST.get('type', '')
         if len(query) > 100:
             return JsonResponse({"error": "Search query is too long."}, status=400)
         keywords = query.split()
@@ -820,36 +847,111 @@ def search(request):  # 用空格分割联合查询
             username_query = Q()
             title_query = Q()
             text_query = Q()
-            type_query = Q()
+
 
             for keyword in keywords:
                 print(keyword)
                 username_query &= Q(nickname__icontains=keyword)
                 title_query &= Q(title__icontains=keyword)
                 text_query &= Q(text__icontains=keyword)
-                type_query &= Q(type__icontains=keyword)
 
-            user_results = User.objects.filter(username_query).values('UserName__user_code')
-            print(user_results)
-            title_result = Post.objects.filter(title_query).values('id')
-            text_results = Post.objects.filter(text_query).values('id')
-            type_results = Post.objects.filter(type_query).values('id')
-            print(title_result)
-            print(text_results)
-            print(type_results)
+            user_results = User.objects.filter(username_query)
+            title_results = Post.objects.filter(title_query)
+            text_results = Post.objects.filter(text_query)
+
 
         else:
             user_results = []
-            title_result = []
+            title_results = []
             text_results = []
-            type_results = []
-        context = {
-            'user_results': list(user_results),
-            'title_results': list(title_result),
-            'text_result': list(text_results),
-            'type_result': list(type_results),
-            'query': str(query),
-        }
+
+        user_result = []
+        title_result = []
+        text_result = []
+        context = []
+
+        if search_type == "用户":
+            print("查用户")
+            for user_ in user_results:
+                uni = {"id": user_.UserName.user_code, "nickname": user_.nickname, "image": user_.imageSrc.name}
+                user_result.append(uni)
+
+            context = user_result
+
+        elif search_type == "内容":
+            print("查内容")
+            for post_ in text_results:
+                if post_ is not None:
+                    if post_.video:
+                        video_path = post_.video.name + ""
+                    else:
+                        video_path = None
+
+                    # 初始化一个空列表来保存所有图片的路径
+                    image_paths = []
+
+                    # 创建一个包含所有图片字段的列表
+                    image_fields = [post_.picSrc1, post_.picSrc2, post_.picSrc3, post_.picSrc4, post_.picSrc5,
+                                    post_.picSrc6,
+                                    post_.picSrc7, post_.picSrc8, post_.picSrc9]
+
+                    # 遍历图片字段
+                    for image in image_fields:
+                        # 如果图片存在
+                        if image:
+                            # 获取图片的路径，并添加到图片路径列表中
+                            image_paths.append(image.name + "")
+                        else:
+                            # 如果图片不存在，添加 None 到图片路径列表中
+                            image_paths.append(None)
+
+                    uni_post = {"mTag": post_.type, "mTitle": post_.title, "mContent": post_.text,
+                                "mDate": post_.datetime, "mPraise": post_.like, "mPosition": post_.location,
+                                "id": post_.id, "mCollect": post_.favorite_num, "mComment": post_.comment_num,
+                                "mAuthor": post_.user_id.nickname, "mVideo": video_path, "mImageList": image_paths,
+                                "userID": post_.user_id.UserName.user_code
+                                }
+                    text_result.append(uni_post)
+
+                    context = text_result
+        elif search_type == "标题":
+            print("查标题")
+            for post_ in title_results:
+                if post_ is not None:
+                    if post_.video:
+                        video_path = post_.video.name + ""
+                    else:
+                        video_path = None
+
+                    # 初始化一个空列表来保存所有图片的路径
+                    image_paths = []
+
+                    # 创建一个包含所有图片字段的列表
+                    image_fields = [post_.picSrc1, post_.picSrc2, post_.picSrc3, post_.picSrc4, post_.picSrc5,
+                                    post_.picSrc6,
+                                    post_.picSrc7, post_.picSrc8, post_.picSrc9]
+
+                    # 遍历图片字段
+                    for image in image_fields:
+                        # 如果图片存在
+                        if image:
+                            # 获取图片的路径，并添加到图片路径列表中
+                            image_paths.append(image.name + "")
+                        else:
+                            # 如果图片不存在，添加 None 到图片路径列表中
+                            image_paths.append(None)
+
+                    uni_post = {"mTag": post_.type, "mTitle": post_.title, "mContent": post_.text,
+                                "mDate": post_.datetime, "mPraise": post_.like, "mPosition": post_.location,
+                                "id": post_.id, "mCollect": post_.favorite_num, "mComment": post_.comment_num,
+                                "mAuthor": post_.user_id.nickname, "mVideo": video_path, "mImageList": image_paths,
+                                "userID": post_.user_id.UserName.user_code
+                                }
+                    title_result.append(uni_post)
+
+                    context = title_result
+        else:
+            context = []
 
         return JsonResponse(context, safe=False)
     else:
