@@ -53,7 +53,7 @@ def login(request):  # 登录
         if res:
             print(res.user_code)
             print(type(res.user_code))
-            return JsonResponse(res.user_code, safe=False)  # 登陆成功
+            return JsonResponse(res.user_code+" "+res.password, safe=False)  # 登陆成功
         else:
             user_res = Login.objects.filter(username=username)
             if user_res:
@@ -75,8 +75,8 @@ def change_password(request):  # 修改密码
         # print("这是ID："+user_code)
         res = Login.objects.filter(user_code=user_code).update(password=new_password)
         if res:
-            return HttpResponse("更改成功")
-        return HttpResponse("更改失败！")
+            return JsonResponse(1, safe=False)
+        return JsonResponse(2, safe=False)
     else:
         return HttpResponse('GET请求无效')
 
