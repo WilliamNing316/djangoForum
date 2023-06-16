@@ -538,7 +538,7 @@ def all_post(request):
             elif other == "我的关注":
                 posts = Post.objects.filter(type=msg_type).filter(Q(user_id__in=following_users)).order_by("-" + order)
             elif other == "最近热度":
-                posts = Post.objects.all().filter(Q(comment_num__gt=1) | Q(like__gt=1)).order_by("-" + order)
+                posts = Post.objects.all().filter(Q(comment_num__gte=1) & Q(like__gte=1)).order_by("-" + order)
             else:
                 posts = Post.objects.all().order_by("-" + order)
         if posts is not None:
