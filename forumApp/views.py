@@ -502,7 +502,7 @@ def my_post(request):  # 返回自己（别人的也可以）的所有的动态
                         "id": post_.id, "mCollect": post_.favorite_num, "mComment": post_.comment_num,
                         "mAuthor": post_.user_id.nickname, "up_not": liked,
                         "collect_not": collected, "mVideo": video_path, "mImageList": image_paths,
-                        "userID": post_.user_id.UserName.user_code
+                        "userID": post_.user_id.UserName.user_code,"mImageUrl":post_.user_id.imageSrc.name
                         }
             post_all.append(uni_post)
         print(post_all)
@@ -576,7 +576,7 @@ def all_post(request):
                                 "id": post_.id, "mCollect": post_.favorite_num, "mComment": post_.comment_num,
                                 "mAuthor": post_.user_id.nickname, "up_not": liked,
                                 "collect_not": collected, "mVideo": video_path, "mImageList": image_paths,
-                                "userID": post_.user_id.UserName.user_code
+                                "userID": post_.user_id.UserName.user_code,"mImageUrl":post_.user_id.imageSrc.name
                                 }
                     post_all.append(uni_post)
             return JsonResponse(post_all, safe=False)
@@ -625,7 +625,7 @@ def uni_post(request):
                         "id": post_.id, "mCollect": post_.favorite_num, "mComment": post_.comment_num,
                         "mAuthor": post_.user_id.nickname, "up_not": liked,
                         "collect_not": collected, "mVideo": video_path, "mImageList": image_paths,
-                        "userID": post_.user_id.UserName.user_code
+                        "userID": post_.user_id.UserName.user_code,"mImageUrl":post_.user_id.imageSrc.name
                         }
 
             return JsonResponse(uni_post, safe=False)
