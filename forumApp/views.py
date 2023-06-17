@@ -53,7 +53,7 @@ def login(request):  # 登录
         if res:
             print(res.user_code)
             print(type(res.user_code))
-            return JsonResponse(res.user_code+" "+res.password, safe=False)  # 登陆成功
+            return JsonResponse(res.user_code + " " + res.password, safe=False)  # 登陆成功
         else:
             user_res = Login.objects.filter(username=username)
             if user_res:
@@ -197,13 +197,15 @@ def who_to_follow(request):  # 我关注了谁
     if request.method == 'POST':
         user_code = request.POST.get('user_code', '')
         user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code.strip('"')).first()).first()
-        following_users = user.following.all().values_list('UserName__user_code', flat=True)
+        following_users = user.following.all()
+        res = []
         if following_users:
-            res = list(following_users)
-            print(res)
-            return JsonResponse(res, safe=False)
-        else:
-            return JsonResponse([], safe=False)
+            for uni in following_users:
+                data = {"nickname": uni.nickname,
+                        "user_id": uni.UserName.user_code,
+                        "image_url": uni.imageSrc.name
+                        }
+                res.append(data)
 
     else:
         return HttpResponse('GET请求无效')
@@ -214,9 +216,15 @@ def who_follow_me(request):  # 我的粉丝有谁
     if request.method == 'POST':
         user_code = request.POST.get('user_code', '')
         user = User.objects.filter(UserName=Login.objects.filter(user_code=user_code.strip('"')).first()).first()
-        follower_users = user.followers.all().values_list('UserName__user_code', flat=True)
-        res = list(follower_users)
-        print(res)
+        follower_users = user.followers.all()
+        res = []
+        if follower_users:
+            for uni in follower_users:
+                data = {"nickname": uni.nickname,
+                        "user_id": uni.UserName.user_code,
+                        "image_url": uni.imageSrc.name
+                        }
+                res.append(data)
 
         return JsonResponse(res, safe=False)
 
@@ -502,7 +510,7 @@ def my_post(request):  # 返回自己（别人的也可以）的所有的动态
                         "id": post_.id, "mCollect": post_.favorite_num, "mComment": post_.comment_num,
                         "mAuthor": post_.user_id.nickname, "up_not": liked,
                         "collect_not": collected, "mVideo": video_path, "mImageList": image_paths,
-                        "userID": post_.user_id.UserName.user_code,"mImageUrl":post_.user_id.imageSrc.name
+                        "userID": post_.user_id.UserName.user_code, "mImageUrl": post_.user_id.imageSrc.name
                         }
             post_all.append(uni_post)
         print(post_all)
@@ -576,7 +584,7 @@ def all_post(request):
                                 "id": post_.id, "mCollect": post_.favorite_num, "mComment": post_.comment_num,
                                 "mAuthor": post_.user_id.nickname, "up_not": liked,
                                 "collect_not": collected, "mVideo": video_path, "mImageList": image_paths,
-                                "userID": post_.user_id.UserName.user_code,"mImageUrl":post_.user_id.imageSrc.name
+                                "userID": post_.user_id.UserName.user_code, "mImageUrl": post_.user_id.imageSrc.name
                                 }
                     post_all.append(uni_post)
             return JsonResponse(post_all, safe=False)
@@ -625,7 +633,7 @@ def uni_post(request):
                         "id": post_.id, "mCollect": post_.favorite_num, "mComment": post_.comment_num,
                         "mAuthor": post_.user_id.nickname, "up_not": liked,
                         "collect_not": collected, "mVideo": video_path, "mImageList": image_paths,
-                        "userID": post_.user_id.UserName.user_code,"mImageUrl":post_.user_id.imageSrc.name
+                        "userID": post_.user_id.UserName.user_code, "mImageUrl": post_.user_id.imageSrc.name
                         }
 
             return JsonResponse(uni_post, safe=False)
@@ -847,7 +855,6 @@ def search(request):  # 用空格分割联合查询
             username_query = Q()
             title_query = Q()
             text_query = Q()
-
 
             for keyword in keywords:
                 print(keyword)
