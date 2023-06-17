@@ -207,6 +207,7 @@ def who_to_follow(request):  # 我关注了谁
                         }
                 res.append(data)
 
+        return JsonResponse(res, safe=False)
     else:
         return HttpResponse('GET请求无效')
 
